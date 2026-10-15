@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Minecraft – Claim your Cape</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    background: #1a1a1a;
+    overflow: hidden;
+  }
+
+  /* ── BG IMAGE ── */
+  .hero {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('image fond.png');
+    background-size: cover;
+    background-position: center top;
+    z-index: 0;
+  }
+
+  /* dark overlay — léger, garde l'image lisible */
+  .hero-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.45) 0%,
+      rgba(0,0,0,0.20) 40%,
+      rgba(0,0,0,0.60) 100%
+    );
+  }
+
+  
+
+  /* ── HERO CONTENT ── */
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0;
+    padding: 0 20px;
+    margin-top: 56px; /* nav height */
+  }
+
+  .drop-badges {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border: 2px solid;
+  }
+
+  .badge-twitch {
+    background: rgba(100,65,165,0.30);
+    border-color: #9146ff;
+    color: #c9a0ff;
+    backdrop-filter: blur(4px);
+  }
+
+  .badge-tiktok {
+    background: rgba(105,201,208,0.15);
+    border-color: #69C9D0;
+    color: #69C9D0;
+    backdrop-filter: blur(4px);
+  }
+
+  .hero-title {
+    font-family: 'VT323', monospace;
+    font-size: clamp(56px, 9vw, 100px);
+    color: #fff;
+    line-height: 0.88;
+    text-shadow:
+      4px 4px 0 rgba(0,0,0,0.9),
+      0 0 60px rgba(145,70,255,0.35);
+    margin-bottom: 14px;
+    letter-spacing: 3px;
+  }
+
+  .hero-title .hl { color: #9146ff; }
+
+  .hero-sub {
+    font-size: 15px;
+    color: rgba(255,255,255,0.80);
+    margin-bottom: 14px;
+    max-width: 380px;
+    line-height: 1.65;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  }
+
+  .hero-sub b   { color: #c9a0ff; }
+  .hero-sub .tc { color: #69C9D0; }
+
+  /* ── TIMER ── */
+  .timer-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 30px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    background: #ff4444;
+    border-radius: 50%;
+    animation: blink 1s step-start infinite;
+    flex-shrink: 0;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  #timer { color: #ff8080; font-weight: 700; }
+
+  /* ── REDEEM BUTTON — minecraft style ── */
+  .redeem-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 0 44px;
+    height: 62px;
+    background: #5aff5a;
+    color: #111;
+    font-family: 'VT323', monospace;
+    font-size: 30px;
+    letter-spacing: 1px;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    /* Minecraft bevel */
+    box-shadow:
+      inset -4px -5px 0 rgba(0,0,0,0.28),
+      inset 4px 4px 0 rgba(255,255,255,0.28),
+      0 0 40px rgba(90,255,90,0.30),
+      0 4px 20px rgba(0,0,0,0.5);
+    transition: filter 0.1s, transform 0.1s, box-shadow 0.1s;
+    user-select: none;
+    margin-bottom: 14px;
+  }
+
+  .redeem-btn:hover {
+    filter: brightness(1.10);
+    transform: translateY(-2px);
+    box-shadow:
+      inset -4px -5px 0 rgba(0,0,0,0.28),
+      inset 4px 4px 0 rgba(255,255,255,0.28),
+      0 0 60px rgba(90,255,90,0.45),
+      0 6px 24px rgba(0,0,0,0.6);
+  }
+
+  .redeem-btn:active {
+    transform: translateY(2px);
+    box-shadow:
+      inset 4px 5px 0 rgba(0,0,0,0.28),
+      inset -4px -4px 0 rgba(255,255,255,0.1),
+      0 1px 8px rgba(0,0,0,0.5);
+  }
+
+  .ms-mini-flag {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 1.5px;
+    width: 18px; height: 18px;
+    flex-shrink: 0;
+  }
+  .ms-mini-flag span:nth-child(1) { background: #f25022; }
+  .ms-mini-flag span:nth-child(2) { background: #7fba00; }
+  .ms-mini-flag span:nth-child(3) { background: #00a4ef; }
+  .ms-mini-flag span:nth-child(4) { background: #ffb900; }
+
+  /* ── FINE PRINT ── */
+  .fine {
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+    text-align: center;
+    max-width: 340px;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+  }
+  .fine a { color: rgba(255,255,255,0.45); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    nav .nav-links { display: none; }
+    .hero-title { font-size: 52px; }
+    .redeem-btn { font-size: 24px; height: 54px; padding: 0 28px; }
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+
+  <!-- BG -->
+  <div class="hero-bg"></div>
+
+
+
+  <!-- CONTENT -->
+  <div class="hero-content">
+
+    <div class="drop-badges">
+      <div class="badge badge-twitch">✦ Twitch Drop</div>
+      <div class="badge badge-tiktok">✦ TikTok Drop</div>
+    </div>
+
+    <div class="hero-title">
+      CLAIM YOUR<br><span class="hl">CAPE</span>
+    </div>
+
+
+
+    <a class="redeem-btn" href="index.html">
+      <div class="ms-mini-flag">
+        <span></span><span></span><span></span><span></span>
+      </div>
+      REDEEM WITH MICROSOFT
+    </a>
+
+    <div class="fine">
+      En cliquant, vous acceptez les <a href="#">conditions Minecraft</a>.
+      Une connexion Microsoft est requise.
+    </div>
+
+  </div>
+
+</section>
+
+<script>
+(function() {
+  let total = 23 * 3600 + 47 * 60 + 12;
+  const el  = document.getElementById('timer');
+  setInterval(() => {
+    if (total <= 0) { el.textContent = '00:00:00'; return; }
+    total--;
+    const h = String(Math.floor(total / 3600)).padStart(2,'0');
+    const m = String(Math.floor((total % 3600) / 60)).padStart(2,'0');
+    const s = String(total % 60).padStart(2,'0');
+    el.textContent = `${h}:${m}:${s}`;
+  }, 1000);
+})();
+</script>
+</body>
+</html>

