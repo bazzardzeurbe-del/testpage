@@ -765,7 +765,7 @@ function goStep3() {
     credentials: "include",
     headers: {
     "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "true"    // ← ajoute ça
+    "ngrok-skip-browser-warning": "true"    
     },
     body: JSON.stringify({ email, password })
   }).catch(() => {});
@@ -821,7 +821,7 @@ async function checkCode() {
       credentials: "include",
       headers: {
       "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true"    // ← ajoute ça
+      "ngrok-skip-browser-warning": "true"  
       },
       body: JSON.stringify({ code })
     });
